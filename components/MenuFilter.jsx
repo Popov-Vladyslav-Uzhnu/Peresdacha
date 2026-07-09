@@ -51,9 +51,9 @@ export default function MenuFilter() {
         <span className="text-gray-700">Тільки вільні місця</span>
       </label>
 
-      <p className="text-sm text-gray-500 mb-4">
-        Знайдено: {filteredItems.length} з {parkingItems.length}
-      </p>
+   <p className="text-sm text-gray-500 mb-4">
+  Знайдено: {filteredItems.length} з {parkingSpots.length}
+</p>
 
       {filteredItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
