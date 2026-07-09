@@ -13,11 +13,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "Parking Pro",
-  description: "Система управління паркінгом — Варіант 11",
-};
+Завдання: Оновити metadata в layout.js
+Додайте шаблон title у app/layout.js:
 
+app/layout.js — оновити metadata
+export const metadata = {
+  title: {
+    default: "Кав'ярня «Кофеїн»",
+    template: "%s | Кофеїн",
+  },
+  description: "Найкраща кава у місті.",
+};
 export default function RootLayout({ children }) {
   return (
     <html lang="uk">

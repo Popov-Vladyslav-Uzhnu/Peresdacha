@@ -1,26 +1,16 @@
 'use client'
 import { useState } from 'react'
 import MenuCard from './MenuCard'
+import { parkingSpots, getZones } from '@/lib/data'
 
-const parkingItems = [
-  { id: 1, number: "A-101", zone: "A", type: "standard", pricePerHour: 50, isAvailable: true },
-  { id: 2, number: "A-102", zone: "A", type: "standard", pricePerHour: 50, isAvailable: true },
-  { id: 3, number: "B-201", zone: "B", type: "electric", pricePerHour: 70, isAvailable: true },
-  { id: 4, number: "B-202", zone: "B", type: "standard", pricePerHour: 50, isAvailable: false },
-  { id: 5, number: "VIP-01", zone: "VIP", type: "disabled", pricePerHour: 120, isAvailable: true },
-  { id: 6, number: "C-301", zone: "C", type: "motorcycle", pricePerHour: 30, isAvailable: true },
-  { id: 7, number: "VIP-02", zone: "VIP", type: "standard", pricePerHour: 100, isAvailable: false },
-  { id: 8, number: "A-103", zone: "A", type: "electric", pricePerHour: 70, isAvailable: true },
-]
-
-const categories = ["Всі", ...new Set(parkingItems.map(item => item.zone))]
+const categories = getZones()
 
 export default function MenuFilter() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('Всі')
   const [showAvailableOnly, setShowAvailableOnly] = useState(false)
 
-  const filteredItems = parkingItems.filter(item => {
+  const filteredItems = parkingSpots.filter(item => {
     const matchesSearch = item.number.toLowerCase().includes(search.toLowerCase())
     const matchesCategory = activeCategory === 'Всі' || item.zone === activeCategory
     const matchesAvailability = !showAvailableOnly || item.isAvailable

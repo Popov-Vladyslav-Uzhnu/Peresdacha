@@ -1,24 +1,49 @@
+'use client'
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const navLinks = [
+  { href: "/", label: "Головна" },
+  { href: "/parking", label: "Паркомісця" },
+  { href: "/menu", label: "Меню" },
+  { href: "/about", label: "Про проект" },
+  { href: "/contact", label: "Контакти" },
+];
 
 export default function Header() {
-  return (
-    <header className="bg-slate-900 text-white py-5">
-      <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold">Parking Pro</Link>
-        
-        <nav className="flex gap-10 text-lg">
-          <Link href="/" className="hover:text-blue-400 transition">Головна</Link>
-          <Link href="/about" className="hover:text-blue-400 transition">Про проект</Link>
-          <Link href="#" className="hover:text-blue-400 transition">Паркомісця</Link>
-          <Link href="#" className="hover:text-blue-400 transition">Мої бронювання</Link>
-        </nav>
+  const pathname = usePathname();
 
-        <Link 
-          href="#" 
-          className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-medium transition"
-        >
-          Увійти
+  return (
+    <header className="bg-slate-900 text-white py-4">
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <Link href="/" className="text-xl font-bold hover:text-blue-400 transition">
+          Parking Pro
         </Link>
+        <nav>
+          <ul className="flex gap-6">
+            {navLinks.map((link) => {
+              const isActive = 
+                link.href === "/" 
+                  ? pathname === "/" 
+                  : pathname.startsWith(link.href);
+
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className={`transition ${
+                      isActive 
+                        ? "text-blue-400 font-semibold" 
+                        : "hover:text-blue-400"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </div>
     </header>
   );
