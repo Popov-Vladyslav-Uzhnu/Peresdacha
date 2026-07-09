@@ -1,152 +1,86 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import Link from "next/link";
+
+import { registerFormSchema } from "@/lib/validations/auth";
+import FormField from "@/components/forms/FormField";
 
 export default function RegisterForm() {
-  const router = useRouter()
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  })
-  const [error, setError] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const {
+    register, handleSubmit, setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(registerFormSchema),
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+  });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError(null)
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Паролі не збігаються')
-      return
-    }
-
-    setIsLoading(true)
-
+  const onSubmit = async (data) => {
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
+          name: data.name, email: data.email, password: data.password,
         }),
-      })
+      });
+      const body = await res.json().catch(() => ({}));
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Помилка реєстрації')
-        setIsLoading(false)
-        return
+      if (res.status === 409) {
+        setError("email", { type: "server", message: body.error || "Email вже існує" });
+        toast.error("Email вже зайнятий");
+        return;
       }
+      if (!res.ok) { toast.error(body.error || "Помилка реєстрації"); return; }
 
-      const result = await signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        router.push('/auth/login')
-        return
+      // Автоматичний вхід
+      const signInResult = await signIn("credentials", {
+        email: data.email, password: data.password, redirect: false,
+      });
+      if (signInResult?.error) {
+        toast.warning("Реєстрація успішна, але не вдалося увійти");
+        router.push("/auth/login");
+        return;
       }
-
-      router.push('/dashboard')
-      router.refresh()
+      toast.success("Реєстрація успішна!");
+      router.push("/dashboard");
+      router.refresh();
     } catch {
-      setError('Щось пішло не так')
-      setIsLoading(false)
+      toast.error("Помилка реєстрації");
     }
-  }
+  };
 
   return (
-    <div className="max-w-md mx-auto mt-10">
-      <div className="bg-white rounded-lg shadow p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <h1 className="text-2xl font-bold text-center mb-6">Реєстрація</h1>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Ім’я</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Пароль</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              minLength={6}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Підтвердження пароля</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              minLength={6}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-amber-700 text-white py-2 rounded hover:bg-amber-800 font-bold disabled:opacity-50"
-          >
-            {isLoading ? 'Реєстрація...' : 'Зареєструватися'}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <FormField label="Ім'я" error={errors.name?.message}>
+            <input type="text" {...register("name")} className="w-full px-3 py-2 border rounded-md" />
+          </FormField>
+          <FormField label="Email" error={errors.email?.message}>
+            <input type="email" {...register("email")} className="w-full px-3 py-2 border rounded-md" />
+          </FormField>
+          <FormField label="Пароль" error={errors.password?.message}>
+            <input type="password" autoComplete="new-password" {...register("password")} className="w-full px-3 py-2 border rounded-md" />
+          </FormField>
+          <FormField label="Підтвердження пароля" error={errors.confirmPassword?.message}>
+            <input type="password" autoComplete="new-password" {...register("confirmPassword")} className="w-full px-3 py-2 border rounded-md" />
+          </FormField>
+          <button type="submit" disabled={isSubmitting}
+            className="w-full bg-amber-700 text-white py-2 px-4 rounded-md hover:bg-amber-800 disabled:opacity-50">
+            {isSubmitting ? "Реєстрація..." : "Зареєструватися"}
           </button>
         </form>
-
-        <p className="text-center mt-4 text-gray-600">
-          Вже маєте акаунт?{' '}
-          <Link href="/auth/login" className="text-amber-700 hover:underline">
-            Увійти
-          </Link>
+        <p className="mt-4 text-center text-sm">
+          Вже маєте акаунт? <Link href="/auth/login" className="text-amber-700 hover:underline">Увійти</Link>
         </p>
       </div>
     </div>
-  )
+  );
 }

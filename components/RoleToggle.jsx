@@ -1,49 +1,46 @@
 'use client'
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from "sonner";
 
-export default function RoleToggle({ userId, currentRole, currentUserId }) {
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  if (userId === currentUserId) {
-    return <span className="text-xs text-gray-400">(ви)</span>;
-  }
-
-  const newRole = currentRole === "admin" ? "user" : "admin";
+export default function RoleToggle({ userId, currentRole }) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const newRole = currentRole === 'admin' ? 'user' : 'admin'
 
   const handleToggle = async () => {
-    setLoading(true);
-
+    setLoading(true)
     try {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch(`/api/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole }),
-      });
+      })
 
       if (!response.ok) {
-        const data = await response.json();
-        alert(data.error || "Помилка зміни ролі");
-        return;
+        const data = await response.json().catch(() => ({}))
+        toast.error(data.error || "Помилка зміни ролі")
+        return
       }
 
-      router.refresh();
+      toast.success(`Роль змінено: ${newRole}`)
+      router.refresh()
     } catch (error) {
-      alert("Помилка з'єднання");
+      toast.error("Помилка з'єднання")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <button
       onClick={handleToggle}
       disabled={loading}
-      className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 transition disabled:opacity-50 cursor-pointer"
+      className="px-3 py-1 text-xs font-medium rounded-full transition-colors disabled:opacity-50
+        bg-amber-100 text-amber-700 hover:bg-amber-200"
     >
-      {loading ? "..." : `→ ${newRole}`}
+      {loading ? "..." : currentRole === 'admin' ? 'Зробити user' : 'Зробити admin'}
     </button>
-  );
+  )
 }

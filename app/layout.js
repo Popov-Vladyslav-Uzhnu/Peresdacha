@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
+import { Toaster } from "sonner";   // ← НОВИЙ ІМПОРТ
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Parking Pro",
+  title: {
+    default: "Parking Pro",
+    template: "%s | Parking Pro",
+  },
   description: "Система онлайн-бронювання паркомісць",
 };
 
@@ -33,6 +37,7 @@ export default function RootLayout({ children }) {
             <Footer />
           </FavoritesProvider>
         </AuthProvider>
+        <Toaster richColors position="top-right" />   {/* ← ДОДАНО */}
       </body>
     </html>
   );
