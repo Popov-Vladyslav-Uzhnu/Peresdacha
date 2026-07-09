@@ -1,35 +1,31 @@
 'use client'
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const links = [
-  { href: "/dashboard", label: "Огляд" },
-  { href: "/dashboard/spots", label: "Паркомісця" },
-  { href: "/dashboard/reservations", label: "Бронювання" },
-];
+import { useSession } from "next-auth/react";
 
 export default function DashboardNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
+
+  const links = [
+    { href: "/dashboard", label: "Огляд" },
+    { href: "/dashboard/drinks", label: "Напої" },
+    ...(isAdmin ? [{ href: "/dashboard/users", label: "Користувачі" }] : []),
+  ];
 
   return (
-    <nav className="bg-slate-800 text-white h-screen w-64 p-6 fixed">
-      <div className="mb-8">
-        <h2 className="text-xl font-bold">Адмін-панель</h2>
-      </div>
+    <nav>
       <ul className="space-y-2">
         {links.map((link) => {
-          const isActive = link.href === "/dashboard" 
-            ? pathname === "/dashboard" 
-            : pathname.startsWith(link.href);
+          const isActive = link.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(link.href);
 
           return (
             <li key={link.href}>
               <Link
                 href={link.href}
-                className={`block px-4 py-3 rounded transition-colors ${
-                  isActive 
-                    ? "bg-blue-600 text-white" 
-                    : "text-gray-300 hover:bg-slate-700"
+                className={`block px-4 py-2 rounded transition-colors ${
+                  isActive ? "bg-amber-700 text-white" : "text-gray-300 hover:bg-gray-700"
                 }`}
               >
                 {link.label}
