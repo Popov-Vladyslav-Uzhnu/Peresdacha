@@ -1,3 +1,28 @@
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Drink from "@/lib/models/Drink";
+import { authorize } from "@/lib/authorize";
+import { updateDrinkSchema } from "@/lib/validations/drink";
+import { sanitizeObject } from "@/lib/sanitize";
+
+// GET — публічний
+export async function GET(request, { params }) {
+  await dbConnect();
+  const { id } = await params;
+
+  try {
+    const drink = await Drink.findById(id);
+
+    if (!drink) {
+      return NextResponse.json({ error: "Напій не знайдено" }, { status: 404 });
+    }
+
+    return NextResponse.json(drink);
+  } catch (error) {
+    return NextResponse.json({ error: "Невалідний ID" }, { status: 400 });
+  }
+}
+
 // PUT — тільки admin
 export async function PUT(request, { params }) {
   const { session, error } = await authorize("admin");
@@ -8,23 +33,27 @@ export async function PUT(request, { params }) {
 
   try {
     const data = await request.json();
-    const drink = await Drink.findByIdAndUpdate(id, data, {
+
+    const result = updateDrinkSchema.safeParse(data);
+    if (!result.success) {
+      const messages = result.error.errors.map((e) => e.message);
+      return NextResponse.json({ errors: messages }, { status: 400 });
+    }
+
+    const sanitized = sanitizeObject(result.data);
+
+    const drink = await Drink.findByIdAndUpdate(id, sanitized, {
       new: true,
       runValidators: true,
     });
 
     if (!drink) {
-      return Response.json({ error: "Напій не знайдено" }, { status: 404 });
+      return NextResponse.json({ error: "Напій не знайдено" }, { status: 404 });
     }
 
-    return Response.json(drink);
+    return NextResponse.json(drink);
   } catch (error) {
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((err) => err.message);
-      return Response.json({ errors: messages }, { status: 400 });
-    }
-
-    return Response.json({ error: "Помилка сервера" }, { status: 500 });
+    return NextResponse.json({ error: "Помилка сервера" }, { status: 500 });
   }
 }
 
@@ -40,11 +69,11 @@ export async function DELETE(request, { params }) {
     const drink = await Drink.findByIdAndDelete(id);
 
     if (!drink) {
-      return Response.json({ error: "Напій не знайдено" }, { status: 404 });
+      return NextResponse.json({ error: "Напій не знайдено" }, { status: 404 });
     }
 
-    return Response.json({ message: `Напій "${drink.name}" видалено` });
+    return NextResponse.json({ message: `Напій "${drink.name}" видалено` });
   } catch (error) {
-    return Response.json({ error: "Невалідний ID" }, { status: 400 });
+    return NextResponse.json({ error: "Невалідний ID" }, { status: 400 });
   }
 }

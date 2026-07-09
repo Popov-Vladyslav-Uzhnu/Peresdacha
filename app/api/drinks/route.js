@@ -1,4 +1,16 @@
-// POST — тільки admin
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Drink from "@/lib/models/Drink";
+import { authorize } from "@/lib/authorize";
+import { createDrinkSchema } from "@/lib/validations/drink";
+import { sanitizeObject } from "@/lib/sanitize";
+
+export async function GET() {
+  await dbConnect();
+  const drinks = await Drink.find({}).sort({ createdAt: -1 });
+  return NextResponse.json(drinks);
+}
+
 export async function POST(request) {
   const { session, error } = await authorize("admin");
   if (error) return error;
@@ -7,15 +19,21 @@ export async function POST(request) {
 
   try {
     const data = await request.json();
-    const drink = await Drink.create(data);
 
-    return Response.json(drink, { status: 201 });
-  } catch (error) {
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((err) => err.message);
-      return Response.json({ errors: messages }, { status: 400 });
+    const result = createDrinkSchema.safeParse(data);
+    if (!result.success) {
+      const messages = result.error.errors.map((e) => e.message);
+      return NextResponse.json({ errors: messages }, { status: 400 });
     }
 
-    return Response.json({ error: "Помилка сервера" }, { status: 500 });
+    const sanitized = sanitizeObject(result.data);
+    const drink = await Drink.create(sanitized);
+
+    return NextResponse.json(drink, { status: 201 });
+  } catch (error) {
+    if (error.message === "Unexpected end of JSON input" || error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Невалідний JSON у тілі запиту" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Помилка сервера" }, { status: 500 });
   }
 }
