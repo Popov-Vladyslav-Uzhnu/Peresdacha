@@ -1,50 +1,43 @@
-import { NextResponse } from 'next/server'
-import { parkingSpots, addSpot } from '@/lib/data'
+import dbConnect from '@/lib/db'
+import Spot from '@/lib/models/Spot'
 
-// GET /api/drinks — список паркомісць з фільтрацією
+// GET /api/drinks
 export async function GET(request) {
+  await dbConnect()
+
   const { searchParams } = new URL(request.url)
   const zone = searchParams.get('zone')
   const type = searchParams.get('type')
   const search = searchParams.get('search')
 
-  let result = [...parkingSpots]
+  const filter = {}
+  if (zone && zone !== 'Всі') filter.zone = zone
+  if (type) filter.type = type
+  if (search) filter.number = { $regex: search, $options: 'i' }
 
-  if (zone && zone !== 'Всі') {
-    result = result.filter(spot => spot.zone === zone)
-  }
+  const spots = await Spot.find(filter).sort({ createdAt: -1 })
 
-  if (type) {
-    result = result.filter(spot => spot.type === type)
-  }
-
-  if (search) {
-    result = result.filter(spot =>
-      spot.number.toLowerCase().includes(search.toLowerCase())
-    )
-  }
-
-  return NextResponse.json(result)
+  return Response.json({
+    count: spots.length,
+    spots,
+  })
 }
 
-// POST /api/drinks — створення нового паркомісця
+// POST /api/drinks
 export async function POST(request) {
+  await dbConnect()
+
   try {
     const body = await request.json()
+    const spot = await Spot.create(body)
 
-    if (!body.number || !body.zone || !body.pricePerHour) {
-      return NextResponse.json(
-        { error: 'Поля number, zone та pricePerHour є обов\'язковими' },
-        { status: 400 }
-      )
+    return Response.json(spot, { status: 201 })
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message)
+      return Response.json({ errors: messages }, { status: 400 })
     }
 
-    const newSpot = addSpot(body)
-    return NextResponse.json(newSpot, { status: 201 })
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Невалідний JSON' },
-      { status: 400 }
-    )
+    return Response.json({ error: 'Помилка сервера' }, { status: 500 })
   }
 }
