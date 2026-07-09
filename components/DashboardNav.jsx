@@ -11,6 +11,7 @@ export default function DashboardNav() {
   const links = [
     { href: "/dashboard", label: "Огляд" },
     { href: "/dashboard/drinks", label: "Напої" },
+    { href: "/dashboard/orders", label: "Замовлення" },
     ...(isAdmin ? [{ href: "/dashboard/users", label: "Користувачі" }] : []),
   ];
 
