@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSpotById } from "@/lib/data";
+import FavoriteButton from "@/components/FavoriteButton";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -31,7 +32,10 @@ export default async function SpotPage({ params }) {
           <div className="mt-6 flex items-center gap-6">
             <span className="text-7xl">🅿️</span>
             <div>
-              <h1 className="text-5xl font-bold">Місце {spot.number}</h1>
+              <div className="flex items-center gap-3">
+  <h1 className="text-4xl font-bold">{spot.number}</h1>
+  <FavoriteButton spotId={spot.id} />
+</div>
               <p className="text-slate-300 text-xl">Зона {spot.zone} • {spot.type}</p>
             </div>
           </div>
